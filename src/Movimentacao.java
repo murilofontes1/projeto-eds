@@ -9,10 +9,10 @@ public class Movimentacao {
     private float valor;
     private Date data;
 
-    public Movimentacao(String tipo, float valor, Date data) {
+    public Movimentacao(String tipo, float valor) {
         this.tipo = tipo;
         this.valor = valor;
-        this.data = data;
+        this.data = new Date();
     }
 
     public String getTipo() {
