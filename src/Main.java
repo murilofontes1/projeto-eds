@@ -1,41 +1,114 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Date;
 
 public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+    private static Scanner sc = new Scanner(System.in);
 
-        // Simulando login
-        Usuario usuario = new Usuario("João", "12345678900");
-        System.out.println("Digite seu CPF para fazer login:");
-        String cpfInput = sc.nextLine();
-        if (usuario.login(cpfInput)) {
-            System.out.println("Login bem-sucedido!");
-        } else {
-            System.out.println("CPF incorreto.");
-            return;
+    public static void main(String[] args) {
+        String URL = "jdbc:postgresql://localhost:5432/financas";
+        String USER = "admin";
+        String PASSWORD = "admin";
+
+        System.out.println("Bem-vindo ao Sistema de Finanças Pessoais");
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+            boolean loggedIn = false;
+            while (!loggedIn) {
+                System.out.println("\nMenu:");
+                System.out.println("1. Login");
+                System.out.println("2. Criar conta");
+                System.out.println("3. Sair");
+                System.out.println("Escolha uma opção: ");
+                int choice = sc.nextInt();
+                sc.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        loggedIn = login(conn);
+                        break;
+                    case 2:
+                        System.out.println("Digite seu CPF: ");
+                        String cpf = sc.nextLine();
+                        criarConta(conn, cpf);
+                        break;
+                    case 3:
+                        System.out.println("Saindo...");
+                        sc.close();
+                        return;
+                    default:
+                        System.out.println("Opção inválida. Tente novamente.");
+                }
+            } 
+        } catch (SQLException e) {
+                System.out.println("Erro na conexão: " + e.getMessage());
+        } finally {
+            sc.close();
+        }
+    }
+
+        // Método de login
+        private static boolean login(Connection conn) {
+            System.out.print("Digite seu CPF: ");
+            String cpf = sc.nextLine();
+    
+            String sql = "SELECT * FROM usuario WHERE cpf = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, cpf);
+                ResultSet rs = pstmt.executeQuery();
+    
+                if (rs.next()) {
+                    System.out.println("Login bem-sucedido!");
+                    return true; // Usuário logado com sucesso
+                } else {
+                    System.out.println("CPF não encontrado. Deseja criar uma conta? (s/n)");
+                    String response = sc.nextLine();
+                    if (response.equalsIgnoreCase("s")) {
+                        criarConta(conn, cpf);
+                        return false;
+                    }
+                    return false; // Login não bem-sucedido
+                }
+            } catch (SQLException e) {
+                System.out.println("Erro ao verificar o login: " + e.getMessage());
+                return false;
+            }
         }
 
-        // Criação da tabela de movimentações
-        Database.criaTabelas();
+        // Método criar conta
+        private static void criarConta(Connection conn, String cpf) {
+            // Verificar se CPF já está cadastrado
+            String checkSql = "SELECT * FROM usuario WHERE cpf = ?";
+            try (PreparedStatement checkPstmt = conn.prepareStatement(checkSql)) {
+                checkPstmt.setString(1, cpf);
+                ResultSet rs = checkPstmt.executeQuery();
 
-        // Inserção de movimentações
-        List<Movimentacao> movimentacoes = new ArrayList<>();
-        System.out.println("Digite o tipo da movimentação (receita/despesa):");
-        String tipo = sc.nextLine();
-        System.out.println("Digite o valor:");
-        float valor = sc.nextFloat();
-        sc.nextLine(); // Consumir a quebra de linha
-        System.out.println("Digite a data (YYYY-MM-DD):");
-        String data = sc.nextLine();
+                if (rs.next()) {
+                    System.out.println("CPF já cadastrado. Retornando ao menu...");
+                    return;
+                }
+            } catch (SQLException e) {
+                System.out.println("Erro ao verificar CPF: " + e.getMessage());
+            }
 
-        Movimentacao mov = new Movimentacao(tipo, valor, data);
-        movimentacoes.add(mov);
-
-        // Gerar relatório
-        Relatorio.gerarRelatorio(movimentacoes);
-
-        sc.close();
-    }
+            // Criar conta caso CPF não esteja cadastrado
+            System.out.print("Digite seu nome: ");
+            String nome = sc.nextLine();
+    
+            String sql = "INSERT INTO usuario (nome, cpf) VALUES (?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, nome);
+                pstmt.setString(2, cpf);
+                pstmt.executeUpdate();
+                System.out.println("Conta criada com sucesso!");
+            } catch (SQLException e) {
+                System.out.println("Erro ao criar conta: " + e.getMessage());
+            }
+        }
 }
