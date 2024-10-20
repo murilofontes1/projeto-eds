@@ -32,6 +32,9 @@ public class Main {
                 switch (choice) {
                     case 1:
                         loggedIn = login(conn);
+                        if (loggedIn) {
+                            menuUsuario(conn); // Chamar menu de usuário
+                        }
                         break;
                     case 2:
                         System.out.println("Digite seu CPF: ");
@@ -65,6 +68,9 @@ public class Main {
     
                 if (rs.next()) {
                     System.out.println("Login bem-sucedido!");
+                    String nome = rs.getString("nome");
+                    float saldo = rs.getFloat("saldo");
+                    System.out.println("Bem vindo, " + nome + "!\nSaldo atual: R$ " + saldo);
                     return true; // Usuário logado com sucesso
                 } else {
                     System.out.println("CPF não encontrado. Deseja criar uma conta? (s/n)");
@@ -109,6 +115,40 @@ public class Main {
                 System.out.println("Conta criada com sucesso!");
             } catch (SQLException e) {
                 System.out.println("Erro ao criar conta: " + e.getMessage());
+            }
+        }
+
+        // Menu de usuário
+        private static void menuUsuario(Connection conn) {
+            boolean sair = false;
+            while (!sair) {
+                System.out.println("\nMenu de Usuário:");
+                System.out.println("1. Inserir Movimentação");
+                System.out.println("2. Exibir Saldo por Categoria");
+                System.out.println("3. Gerar Relatório");
+                System.out.println("4. Sair");
+                System.out.print("Escolha uma opção: ");
+
+                int choice = sc.nextInt();
+                sc.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        System.out.println("Em breve.");
+                        break;
+                    case 2:
+                        System.out.println("Em breve.");
+                        break;
+                    case 3:
+                        System.out.println("Em breve.");
+                        break;
+                    case 4:
+                        System.out.println("Volte sempre!");
+                        sair = true;
+                        break;
+                    default:
+                        System.out.println("Opção inválida. Tente novamente.");
+                }
             }
         }
 }
