@@ -10,7 +10,7 @@ import java.util.Date;
 
 public class Main {
     private static Scanner sc = new Scanner(System.in);
-
+    private static String cpf;
     public static void main(String[] args) {
         String URL = "jdbc:postgresql://localhost:5432/financas";
         String USER = "admin";
@@ -59,7 +59,7 @@ public class Main {
         // Método de login
         private static boolean login(Connection conn) {
             System.out.print("Digite seu CPF: ");
-            String cpf = sc.nextLine();
+            cpf = sc.nextLine();
     
             String sql = "SELECT * FROM usuario WHERE cpf = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -69,8 +69,7 @@ public class Main {
                 if (rs.next()) {
                     System.out.println("Login bem-sucedido!");
                     String nome = rs.getString("nome");
-                    float saldo = rs.getFloat("saldo");
-                    System.out.println("Bem vindo, " + nome + "!\nSaldo atual: R$ " + saldo);
+                    System.out.println("Bem vindo, " + nome + "!");
                     return true; // Usuário logado com sucesso
                 } else {
                     System.out.println("CPF não encontrado. Deseja criar uma conta? (s/n)");
@@ -122,7 +121,8 @@ public class Main {
         private static void menuUsuario(Connection conn) {
             boolean sair = false;
             while (!sair) {
-                System.out.println("\nMenu de Usuário:");
+                float saldoAtual = obterSaldo(conn);
+                System.out.println("\nSaldo atual: R$ " + saldoAtual);
                 System.out.println("1. Inserir Movimentação");
                 System.out.println("2. Exibir Saldo por Categoria");
                 System.out.println("3. Gerar Relatório");
@@ -134,7 +134,7 @@ public class Main {
 
                 switch (choice) {
                     case 1:
-                        System.out.println("Em breve.");
+                        adicionarMovimentacao(conn);
                         break;
                     case 2:
                         System.out.println("Em breve.");
@@ -151,4 +151,52 @@ public class Main {
                 }
             }
         }
+
+        // Método para obter saldo atual
+        private static float obterSaldo(Connection conn) {
+            String sql = "SELECT saldo FROM usuario WHERE cpf = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, cpf);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getFloat("saldo");
+                }
+            } catch (SQLException e) {
+                System.out.println("Erro ao obter saldo: " + e.getMessage());
+            }
+            return 0;
+        }
+
+        // Método para adicionar movimentação
+        private static void adicionarMovimentacao(Connection conn) {
+            try {
+                sc = new Scanner(System.in);
+        
+                System.out.print("Digite o tipo (receita ou despesa): ");
+                String tipo = sc.nextLine();
+        
+                System.out.print("Digite o valor: ");
+                float valor = sc.nextFloat();
+        
+                // Criar a instância de Movimentacao
+                Movimentacao movimentacao = new Movimentacao(tipo, valor);
+        
+                // Adicionar a movimentação ao banco de dados
+                movimentacao.adicionarMovimentacao(conn);
+        
+                // Atualizar o saldo do usuário
+                String updateSaldoSql = "UPDATE usuario SET saldo = saldo + ? WHERE cpf = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(updateSaldoSql)) {
+                    if (tipo.equals("despesa")) {
+                        valor = -valor; // Se for uma despesa, subtrai do saldo
+                    }
+                    pstmt.setFloat(1, valor);
+                    pstmt.setString(2, cpf);
+                    pstmt.executeUpdate();
+                    System.out.println("Saldo atualizado com sucesso!");
+                }
+            } catch (SQLException e) {
+                System.out.println("Erro ao adicionar movimentação: " + e.getMessage());
+            }
+        }        
 }
