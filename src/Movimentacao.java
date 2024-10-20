@@ -28,14 +28,15 @@ public class Movimentacao {
     }
 
     // Método para adicionar uma movimentação no banco de dados
-    public void adicionarMovimentacao(Connection conn) throws SQLException {
-        String sql = "INSERT INTO movimentacao (tipo, valor, data) VALUES (?, ?, ?)";
+    public void adicionarMovimentacao(Connection conn, String cpf) throws SQLException {
+        String sql = "INSERT INTO movimentacao (tipo, valor, data, cpf) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, this.tipo);
             pstmt.setFloat(2, this.valor);
-            
+        
             // Converter java.util.Date para java.sql.Date antes de inserir
             pstmt.setDate(3, new java.sql.Date(this.data.getTime())); // Usando java.sql.Date para a inserção
+            pstmt.setString(4, cpf);
             pstmt.executeUpdate();
             System.out.println("Movimentação adicionada com sucesso!");
         }

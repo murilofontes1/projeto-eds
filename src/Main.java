@@ -70,6 +70,7 @@ public class Main {
                     System.out.println("Login bem-sucedido!");
                     String nome = rs.getString("nome");
                     System.out.println("Bem vindo, " + nome + "!");
+                    Relatorio.setCpfUsuario(cpf);
                     return true; // Usuário logado com sucesso
                 } else {
                     System.out.println("CPF não encontrado. Deseja criar uma conta? (s/n)");
@@ -140,7 +141,13 @@ public class Main {
                         System.out.println("Em breve.");
                         break;
                     case 3:
-                        System.out.println("Em breve.");
+                        System.out.print("Digite a data inicial (YYYY-MM-DD): ");
+                        String dataInicio = sc.nextLine();
+                    
+                        System.out.print("Digite a data final (YYYY-MM-DD): ");
+                        String dataFim = sc.nextLine();
+                    
+                        Relatorio.gerarRelatorio(conn, dataInicio, dataFim); // Chama o método da classe Relatorio
                         break;
                     case 4:
                         System.out.println("Volte sempre!");
@@ -182,7 +189,7 @@ public class Main {
                 Movimentacao movimentacao = new Movimentacao(tipo, valor);
         
                 // Adicionar a movimentação ao banco de dados
-                movimentacao.adicionarMovimentacao(conn);
+                movimentacao.adicionarMovimentacao(conn, cpf);
         
                 // Atualizar o saldo do usuário
                 String updateSaldoSql = "UPDATE usuario SET saldo = saldo + ? WHERE cpf = ?";
